@@ -1,67 +1,67 @@
-﻿Seed,Team
-1,UCLA
-1,South Carolina
-1,Texas
-1,USC
-2,UConn
-2,TCU
-2,Duke
-2,NC State
-3,Notre Dame
-3,Oklahoma
-3,North Carolina
-3,LSU
-4,Kentucky
-4,Ohio State
-4,Ole Miss
-4,Baylor
-5,Kansas State
-5,Tennessee
-5,Alabama
-5,West Virginia
-6,Iowa
-6,Maryland
-6,Michigan
-6,Florida State
-7,Oklahoma State
-7,Utah
-7,Louisville
-7,Michigan State
-8,Richmond
-8,Utah
-8,Illinois
-8,California
-9,Georgia Tech
-9,Indiana
-9,Creighton
-9,Mississippi State
-10,Oregon
-10,Nebraska
-10,South Dakota State
-10,Virginia Tech
-11,Washington
-11,Columbia
-11,Iowa State
-11,Princeton
-12,South Florida
-12,Fairfield
-12,Middle Tennessee
-12,Drake
-13,Montana State
-13,Liberty
-13,Oregon State
-13,Vermont
-14,Stephen F. Austin
-14,Florida Gulf Coast
-14,Portland
-14,Green Bay
-15,Lehigh
-15,Fairleigh Dickinson
-15,Arkansas State
-15,UC Irvine
-16,UC San Diego
-16,Southern
-16,Tennessee Tech
-16,High Point
-16,William & Mary
-16,UNC Greensboro
+Seed,Team
+1,ucla
+1,south-carolina
+1,texas
+1,usc
+2,uconn
+2,tcu
+2,duke
+2,nc-state
+3,notre-dame
+3,oklahoma
+3,north-carolina
+3,lsu
+4,kentucky
+4,ohio-state
+4,ole-miss
+4,baylor
+5,kansas-state
+5,tennessee
+5,alabama
+5,west-virginia
+6,iowa
+6,maryland
+6,michigan
+6,florida-state
+7,oklahoma-state
+7,utah
+7,louisville
+7,vanderbilt
+8,richmond
+8,utah
+8,illinois
+8,california
+9,georgia-tech
+9,indiana
+9,creighton
+9,mississippi-state
+10,oregon
+10,nebraska
+10,south-dakota-state
+10,virginia-tech
+11,washington
+11,columbia
+11,iowa-state
+11,princeton
+12,south-florida
+12,fairfield
+12,middle-tennessee
+12,drake
+13,montana-state
+13,liberty
+13,oregon-state
+13,vermont
+14,stephen-f-austin
+14,florida-gulf-coast
+14,portland
+14,green-bay
+15,lehigh
+15,fairleigh-dickinson
+15,arkansas-state
+15,uc-irvine
+16,uc-san-diego
+16,southern
+16,tennessee-tech
+16,high-point
+16,william-and-mary
+16,unc-greensboro
