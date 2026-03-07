@@ -43,43 +43,52 @@ def load_all_data():
     
     # 2. Google Sheets
     try:
-        # Re-authorize and open inside the function to be safe
         gc = gspread.authorize(creds)
         sh = gc.open_by_key(SHEET_ID)
         
         # --- LOAD LEADERBOARD ---
         lb_worksheet = sh.worksheet("Leaderboard")
-        lb_data = lb_worksheet.get_all_values()
+        lb_raw = lb_worksheet.get_all_values()
         
-        # In your extract script, Row 1 is the Timestamp, Row 2 is the Headers.
-        # We grab Row 2 (index 1) as columns and data from Row 3 (index 2) onwards.
-        if len(lb_data) > 1:
-            leaderboard_df = pd.DataFrame(lb_data[2:], columns=lb_data[1])
-            # Store the timestamp from A1 for use in the UI if needed
-            st.caption(f"Stats {lb_data[0][0]}") 
-        else:
-            leaderboard_df = pd.DataFrame(columns=['Contestant', '1st Round', '2nd Round', 'Total'])
-
-        # --- LOAD PICKS ---
-        picks_worksheet = sh.worksheet("Sheet1")
-        picks_data = picks_worksheet.get_all_values()
-        
-        if len(picks_data) > 0:
-            # data[0] is the header row, data[1:] is the actual picks
-            picks_df = pd.DataFrame(picks_data[1:], columns=picks_data[0])
+        if len(lb_raw) > 1:
+            # Row 0 is Timestamp, Row 1 is Headers, Row 2+ is Data
+            leaderboard_df = pd.DataFrame(lb_raw[2:], columns=lb_raw[1])
+            # Clean up: Remove empty columns or duplicates
+            leaderboard_df = leaderboard_df.loc[:, ~leaderboard_df.columns.duplicated()]
+            leaderboard_df = leaderboard_df.loc[:, leaderboard_df.columns != '']
             
-            # CLEANUP: Remove any completely empty columns that cause duplicate issues
+            # Display the timestamp from the sheet
+            st.caption(f"📊 {lb_raw[0][0]}")
+        else:
+            leaderboard_df = pd.DataFrame()
+
+        # --- LOAD PLAYER STATS ---
+        ps_worksheet = sh.worksheet("PlayerStats")
+        ps_raw = ps_worksheet.get_all_values()
+        
+        if len(ps_raw) > 1:
+            # Row 1 is Headers for Player Stats
+            player_stats_df = pd.DataFrame(ps_raw[2:], columns=ps_raw[1])
+        else:
+            player_stats_df = pd.DataFrame()
+
+        # --- LOAD PICKS (Sheet1) ---
+        picks_worksheet = sh.worksheet("Sheet1")
+        picks_raw = picks_worksheet.get_all_values()
+        
+        if len(picks_raw) > 0:
+            picks_df = pd.DataFrame(picks_raw[1:], columns=picks_raw[0])
             picks_df = picks_df.loc[:, ~picks_df.columns.duplicated()]
-            picks_df = picks_df.loc[:, picks_df.columns != '']
         else:
             picks_df = pd.DataFrame()
             
     except Exception as e:
         st.error(f"Error connecting to Google Sheets: {e}")
-        leaderboard_df = pd.DataFrame(columns=['Contestant', '1st Round', '2nd Round', 'Total'])
+        leaderboard_df = pd.DataFrame()
+        player_stats_df = pd.DataFrame()
         picks_df = pd.DataFrame()
 
-    return seeds_df, rosters_df, leaderboard_df, picks_df
+    return seeds_df, rosters_df, leaderboard_df, picks_df, player_stats_df
 
 # Call the function once
 seeds_df, rosters_df, leaderboard_df, picks_df = load_all_data()
