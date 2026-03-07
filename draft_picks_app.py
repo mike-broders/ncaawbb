@@ -276,7 +276,7 @@ with tab4:
     else:
         if not picks_df.empty:
             # Get list of contestants
-            contestants = picks_df['Contestant'].unique()
+            contestants = picks_df['Name'].unique()
             
             # Create a simple dropdown to pick a contestant, or show all
             selected_user = st.selectbox("Select a Contestant to view their roster:", ["All"] + list(contestants))
