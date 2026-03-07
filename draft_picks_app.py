@@ -95,7 +95,12 @@ with tab1:
             if st.button("🔄 Reset Form"):
                 st.rerun()
 
-        st.markdown("### Rules: Select 8 players to maximize your point total. Each player must come from a unique Seed (1-16).")
+        st.markdown("""
+        ### RULES:
+        * **Select 8 players** to maximize your point total.
+        * Each selected player must come from a **unique Seed (1-16)**.
+        * You may select players from teams in the **First Four**, but points scored in those specific games **will not count** toward your total.
+        """)
 
         user_name = st.text_input("Enter Your Name / Team Name")
         
