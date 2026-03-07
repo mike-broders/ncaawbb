@@ -23,7 +23,7 @@ if os.path.exists("ncaa-pool-489213-048a45542e02.json"):
     creds = Credentials.from_service_account_file("ncaa-pool-489213-048a45542e02.json", scopes=scope)
 # If running on Streamlit Cloud:
 else:
-    creds_dict = st.secrets["ncaaplayerpool@ncaa-pool-489213.iam.gserviceaccount.com"]
+    creds_dict = st.secrets["gcp_service_account"]
     creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
 
 client = gspread.authorize(creds)
