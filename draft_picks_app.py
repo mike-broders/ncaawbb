@@ -278,7 +278,7 @@ with tab4:
     # DEADLINE should be defined at the top of your script
     now = datetime.datetime.now()
 
-    if now < DEADLINE:
+    if now < deadline:
         st.info(f"🔒 Submissions are hidden until the tournament begins ({DEADLINE.strftime('%I:%M %p on %m/%d')}).")
     else:
         # After normalization, we know the column is called 'Contestant'
