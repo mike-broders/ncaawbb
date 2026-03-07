@@ -100,7 +100,7 @@ tab1, tab2, tab3, tab4 = st.tabs(["📝 Enter Player Picks", "🏆 Leaderboard",
 
 # 1. Set your deadline (Year, Month, Day, Hour, Minute)
 # Example: March 19, 2026, at 11:00 AM Central
-deadline = datetime.datetime(2026, 3, 20, 11, 0, 0)
+deadline = datetime.datetime(2026, 3, 2, 11, 0, 0)
 
 # 2. Define Timezones (Ensures the server time matches your time)
 central = pytz.timezone('US/Central')
