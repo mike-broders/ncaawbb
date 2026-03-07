@@ -14,8 +14,22 @@ results_file = os.path.join(script_dir, "updated_picks_per_round.xlsx")
 
 st.set_page_config(page_title="2026 NCAA Women's Player Pool", page_icon="🏀", layout="wide")
 
-# --- DATA LOADING ---
+# --- GOOGLE SHEETS SETUP ---
+# Ensure your secrets/key are handled here
+scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
 
+# If running locally:
+if os.path.exists("ncaa-pool-489213-048a45542e02.json"):
+    creds = Credentials.from_service_account_file("ncaa-pool-489213-048a45542e02.json", scopes=scope)
+# If running on Streamlit Cloud:
+else:
+    creds_dict = st.secrets["ncaaplayerpool@ncaa-pool-489213.iam.gserviceaccount.com"]
+    creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
+
+client = gspread.authorize(creds)
+SHEET_ID = "1P5-Kc_2X7skNMye3EB-oU-wpc4IsuSI1D9KyY9jW3gU"
+
+# --- DATA LOADING ---
 # We set ttl=120 (2 minutes) to prevent hitting Google's 60-request-per-minute limit.
 # This also saves your local computer/GitHub from unnecessary reads.
 @st.cache_data(ttl=120) 
