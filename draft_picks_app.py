@@ -171,9 +171,6 @@ with tab2:
         st.dataframe(leaderboard_df, use_container_width=True, hide_index=True)
     else:
         st.write("No standings available yet. Points will update once the games begin!")
-            
-    except Exception as e:
-        st.error(f"Leaderboard Error: {e}")
 
 with tab3:
     st.title("📊 Individual Player Points")
