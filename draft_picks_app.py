@@ -33,7 +33,6 @@ SHEET_ID = "1P5-Kc_2X7skNMye3EB-oU-wpc4IsuSI1D9KyY9jW3gU"
 
 # --- DATA LOADING ---
 # We set ttl=120 (2 minutes) to prevent hitting Google's 60-request-per-minute limit.
-# This also saves your local computer/GitHub from unnecessary reads.
 @st.cache_data(ttl=120) 
 def load_all_data():
     # 1. Local Files
@@ -51,13 +50,10 @@ def load_all_data():
         lb_raw = lb_worksheet.get_all_values()
         
         if len(lb_raw) > 1:
-            # Row 0 is Timestamp, Row 1 is Headers, Row 2+ is Data
             leaderboard_df = pd.DataFrame(lb_raw[2:], columns=lb_raw[1])
-            # Clean up: Remove empty columns or duplicates
+            leaderboard_df.columns = leaderboard_df.columns.str.strip()
             leaderboard_df = leaderboard_df.loc[:, ~leaderboard_df.columns.duplicated()]
             leaderboard_df = leaderboard_df.loc[:, leaderboard_df.columns != '']
-            
-            # Display the timestamp from the sheet
             st.caption(f"📊 {lb_raw[0][0]}")
         else:
             leaderboard_df = pd.DataFrame()
@@ -67,8 +63,8 @@ def load_all_data():
         ps_raw = ps_worksheet.get_all_values()
         
         if len(ps_raw) > 1:
-            # Row 1 is Headers for Player Stats
             player_stats_df = pd.DataFrame(ps_raw[2:], columns=ps_raw[1])
+            player_stats_df.columns = player_stats_df.columns.str.strip()
         else:
             player_stats_df = pd.DataFrame()
 
@@ -78,7 +74,15 @@ def load_all_data():
         
         if len(picks_raw) > 0:
             picks_df = pd.DataFrame(picks_raw[1:], columns=picks_raw[0])
+            
+            # CLEANUP: Remove spaces and handle 'Name' vs 'Contestant'
+            picks_df.columns = picks_df.columns.str.strip()
+            
+            if 'Name' in picks_df.columns and 'Contestant' not in picks_df.columns:
+                picks_df = picks_df.rename(columns={'Name': 'Contestant'})
+            
             picks_df = picks_df.loc[:, ~picks_df.columns.duplicated()]
+            picks_df = picks_df.loc[:, picks_df.columns != '']
         else:
             picks_df = pd.DataFrame()
             
@@ -271,45 +275,51 @@ with tab3:
 with tab4:
     st.title("📝 Final Contestant Submissions")
     
-    if now < deadline:
-        st.info(f"🔒 Submissions are hidden until the tournament begins ({deadline.strftime('%I:%M %p on %m/%d')}).")
+    # DEADLINE should be defined at the top of your script
+    now = datetime.datetime.now()
+
+    if now < DEADLINE:
+        st.info(f"🔒 Submissions are hidden until the tournament begins ({DEADLINE.strftime('%I:%M %p on %m/%d')}).")
     else:
-        if not picks_df.empty:
-            # Get list of contestants
-            contestants = picks_df['Name'].unique()
+        # After normalization, we know the column is called 'Contestant'
+        if not picks_df.empty and 'Contestant' in picks_df.columns:
+            # Clean list of unique contestant names
+            contestants = [c for c in picks_df['Contestant'].unique() if str(c).strip() != ""]
             
-            # Create a simple dropdown to pick a contestant, or show all
-            selected_user = st.selectbox("Select a Contestant to view their roster:", ["All"] + list(contestants))
-            
-            # Filter logic
+            selected_user = st.selectbox("Select a Contestant to view their roster:", ["All"] + contestants)
             display_list = contestants if selected_user == "All" else [selected_user]
 
             for user in display_list:
                 with st.expander(f"👤 {user}'s Picks", expanded=(selected_user != "All")):
-                    # Get the row for this user
+                    # Get the picks for this specific user
                     user_row = picks_df[picks_df['Contestant'] == user].iloc[0]
                     
-                    # Extract the 8 players from Slot_1_Player to Slot_8_Player
                     user_players = []
+                    # Loop through the 8 slots
                     for i in range(1, 9):
-                        p_name = user_row.get(f"Slot_{i}_Player")
-                        if p_name:
-                            # Lookup team and seed from rosters_df
+                        col_name = f"Slot_{i}_Player"
+                        p_name = user_row.get(col_name)
+                        
+                        if p_name and str(p_name).strip() != "":
+                            # Find the player's info in our rosters/seeds data
                             player_info = rosters_df[rosters_df['Player'] == p_name]
+                            
                             if not player_info.empty:
                                 team = player_info.iloc[0]['Team']
                                 seed = player_info.iloc[0]['Seed']
                             else:
-                                team, seed = "Unknown", "N/A"
-                            
+                                team, seed = "Unknown", "-"
+
                             user_players.append({
-                                "Slot": f"Slot {i}",
-                                "Player": p_name,
+                                "Slot": f"Player {i}",
+                                "Selected Player": p_name,
                                 "Team": team,
                                 "Seed": seed
                             })
                     
-                    # Display as a clean table
-                    st.table(pd.DataFrame(user_players))
+                    if user_players:
+                        st.table(pd.DataFrame(user_players))
+                    else:
+                        st.warning(f"No picks found for {user}.")
         else:
-            st.warning("No submissions found in the system.")
+            st.warning("No submission data available yet.")
