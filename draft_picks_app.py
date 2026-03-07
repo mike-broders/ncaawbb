@@ -212,54 +212,59 @@ with tab2:
     st.title("🏆 Current Standings")
     
     try:
-        # 1. Load the "Picks" from Sheet1 and "Stats" from your Excel file
-        # leaderboard_df and picks_df should be loaded from your load_all_data() function
-        
-        if not picks_df.empty:
-            # This is where we calculate the round-by-round scores
-            # We need to map each player's points to the specific round they were scored in.
+        if not leaderboard_df.empty:
+            # 1. Define the ideal tournament order
+            ideal_order = ['Contestant', '1st Round', '2nd Round', 'Sweet 16', 'Elite 8', 'Final Four', "Nat'l Champ", 'Total']
             
-            # --- ROUND CALCULATION LOGIC ---
-            # You'll need a way to link Game IDs to Rounds. 
-            # Example mapping based on dates for 2026:
-            def get_round(game_date):
-                if game_date in ['2026-03-20', '2026-03-21']: return '1st Round'
-                if game_date in ['2026-03-22', '2026-03-23']: return '2nd Round'
-                if game_date in ['2026-03-27', '2026-03-28']: return 'Sweet 16'
-                if game_date in ['2026-03-29', '2026-03-30']: return 'Elite 8'
-                if game_date == '2026-04-03': return 'Final Four'
-                if game_date == '2026-04-05': return "Nat'l Champ"
-                return 'Other'
+            # 2. Safety Check: Only include columns that actually exist in your Google Sheet right now
+            # This prevents the "KeyError" before the Sweet 16 starts
+            display_cols = [c for c in ideal_order if c in leaderboard_df.columns]
+            
+            # 3. Data Cleaning: Ensure 'Total' is treated as a number so sorting works correctly
+            if 'Total' in leaderboard_df.columns:
+                leaderboard_df['Total'] = pd.to_numeric(leaderboard_df['Total'], errors='coerce').fillna(0)
+                leaderboard_final = leaderboard_df.sort_values(by='Total', ascending=False)
+            else:
+                leaderboard_final = leaderboard_df
 
-            # (This part would typically happen in your 'extract_wbb_player_points.py' script
-            # to generate a table that looks exactly like your screenshot.)
-
-            # 2. Display the formatted Leaderboard
-            # Force columns to match your men's screenshot
-            display_cols = ['Contestant', '1st Round', '2nd Round', 'Sweet 16', 'Elite 8', 'Final Four', "Nat'l Champ", 'Total']
-            
-            # Ensure the dataframe is sorted by 'Total' descending
-            leaderboard_final = leaderboard_df.sort_values(by='Total', ascending=False)
-            
+            # 4. Display the table
             st.dataframe(
                 leaderboard_final[display_cols], 
                 use_container_width=True, 
                 hide_index=True
             )
+        else:
+            st.info("The leaderboard is currently empty. It will populate once the first round begins on March 20th!")
             
     except Exception as e:
         st.error(f"Leaderboard Display Error: {e}")
 
 with tab3:
     st.title("📊 Individual Player Points")
+    
     try:
-        # Use the gspread method to read the sheet
-        gc = gspread.authorize(creds)
-        sh = gc.open_by_key(SHEET_ID)
-        stats_data = sh.worksheet("PlayerStats").get_all_records()
-        df_stats = pd.DataFrame(stats_data)
+        # Note: player_stats_df is now loaded in your main load_all_data() function 
+        # using the safer get_all_values() method to avoid duplicate header errors.
         
-        if not df_stats.empty:
-            st.dataframe(df_stats.sort_values(by="Points", ascending=False), use_container_width=True, hide_index=True)
+        if not player_stats_df.empty:
+            # Define ideal order for player stats
+            ps_ideal = ["Player Name", "Team", "1st Round", "2nd Round", "Sweet 16", "Elite 8", "Final Four", "Nat'l Champ", "Total"]
+            ps_display = [c for c in ps_ideal if c in player_stats_df.columns]
+            
+            # Ensure Total is numeric for sorting
+            if 'Total' in player_stats_df.columns:
+                player_stats_df['Total'] = pd.to_numeric(player_stats_df['Total'], errors='coerce').fillna(0)
+                player_stats_final = player_stats_df.sort_values(by="Total", ascending=False)
+            else:
+                player_stats_final = player_stats_df
+
+            st.dataframe(
+                player_stats_final[ps_display], 
+                use_container_width=True, 
+                hide_index=True
+            )
+        else:
+            st.info("Player stats will be available here starting March 20th.")
+            
     except Exception as e:
         st.error(f"Stats Error: {e}")
