@@ -142,26 +142,31 @@ with tab1:
         if st.button("Submit My Player Picks", disabled=not is_valid, use_container_width=True, type="primary"):
             with st.spinner("Submitting to Google Sheets..."):
                 try:
-                    # RE-AUTHORIZE GSPREAD (Ensures the 'client' is fresh)
+                    # 1. Authorize and Open
                     gc = gspread.authorize(creds)
                     sh = gc.open_by_key(SHEET_ID)
                     target_sheet = sh.worksheet("Sheet1")
 
-                    # Prepare the data row
-                    # 1. Start with the name
+                    # 2. Prepare the data row
                     row_data = [user_name]
-                    # 2. Add player, team, and seed for all 8 slots
                     for p in user_selections:
-                        row_data.extend([p['Player'], p['Team'], p['Seed']])
+                        # Convert everything to standard Python types (str and int)
+                        # This fixes the 'int64' error!
+                        row_data.append(str(p['Player']))
+                        row_data.append(str(p['Team']))
+                        row_data.append(int(p['Seed'])) # Forces int64 -> standard int
 
-                    # Append the row
+                    # 3. Append to Google Sheets
                     target_sheet.append_row(row_data)
                     
                     st.success(f"🎉 Successfully submitted! Good luck, {user_name}!")
                     st.balloons()
-                    st.cache_data.clear() # Clears the leaderboard cache so it updates
+                    
+                    # Force a cache clear so the new user shows up immediately
+                    st.cache_data.clear() 
                     
                 except Exception as e:
+                    # If it still fails, this will tell us exactly which part
                     st.error(f"Error submitting to Google Sheets: {e}")
                 
 with tab2:
