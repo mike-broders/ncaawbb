@@ -98,7 +98,7 @@ with tab1:
         st.markdown("""
         ### RULES:
         * **Select 8 players** to maximize your point total.
-        * Each selected player must come from a **unique seed (1-16**.
+        * Each selected player must come from a **unique seed (1-16)**.
         * You may select a player from teams participating in the First Four round, but points scored in the First Four games **will not count** toward your total.
         """)
 
