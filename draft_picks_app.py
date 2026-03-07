@@ -96,7 +96,7 @@ seeds_df, rosters_df, leaderboard_df, picks_df, player_stats_df = load_all_data(
 conn = st.connection("gsheets", type=GSheetsConnection)
 
 # --- APP TABS ---
-tab1, tab2, tab3 = st.tabs(["📝 Enter Player Picks", "🏆 Leaderboard", "📊 Player Stats"])
+tab1, tab2, tab3, tab4 = st.tabs(["📝 Enter Player Picks", "🏆 Leaderboard", "📊 Player Stats", "📝 View Submissions"])
 
 # 1. Set your deadline (Year, Month, Day, Hour, Minute)
 # Example: March 19, 2026, at 11:00 AM Central
@@ -267,3 +267,49 @@ with tab3:
             
     except Exception as e:
         st.error(f"Stats Error: {e}")
+
+with tab4:
+    st.title("📝 Final Contestant Submissions")
+    
+    if now < deadline:
+        st.info(f"🔒 Submissions are hidden until the tournament begins ({deadline.strftime('%I:%M %p on %m/%d')}).")
+    else:
+        if not picks_df.empty:
+            # Get list of contestants
+            contestants = picks_df['Contestant'].unique()
+            
+            # Create a simple dropdown to pick a contestant, or show all
+            selected_user = st.selectbox("Select a Contestant to view their roster:", ["All"] + list(contestants))
+            
+            # Filter logic
+            display_list = contestants if selected_user == "All" else [selected_user]
+
+            for user in display_list:
+                with st.expander(f"👤 {user}'s Picks", expanded=(selected_user != "All")):
+                    # Get the row for this user
+                    user_row = picks_df[picks_df['Contestant'] == user].iloc[0]
+                    
+                    # Extract the 8 players from Slot_1_Player to Slot_8_Player
+                    user_players = []
+                    for i in range(1, 9):
+                        p_name = user_row.get(f"Slot_{i}_Player")
+                        if p_name:
+                            # Lookup team and seed from rosters_df
+                            player_info = rosters_df[rosters_df['Player'] == p_name]
+                            if not player_info.empty:
+                                team = player_info.iloc[0]['Team']
+                                seed = player_info.iloc[0]['Seed']
+                            else:
+                                team, seed = "Unknown", "N/A"
+                            
+                            user_players.append({
+                                "Slot": f"Slot {i}",
+                                "Player": p_name,
+                                "Team": team,
+                                "Seed": seed
+                            })
+                    
+                    # Display as a clean table
+                    st.table(pd.DataFrame(user_players))
+        else:
+            st.warning("No submissions found in the system.")
