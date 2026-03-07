@@ -15,14 +15,39 @@ results_file = os.path.join(script_dir, "updated_picks_per_round.xlsx")
 st.set_page_config(page_title="2026 NCAA Women's Player Pool", page_icon="🏀", layout="wide")
 
 # --- DATA LOADING ---
-@st.cache_data
-def load_data():
+
+# We set ttl=120 (2 minutes) to prevent hitting Google's 60-request-per-minute limit.
+# This also saves your local computer/GitHub from unnecessary reads.
+@st.cache_data(ttl=120) 
+def load_all_data():
+    # 1. Load Local Files
     seeds_df = pd.read_csv(seeds_file)
     seeds_df['Seed'] = seeds_df['Seed'].astype(int)
     rosters_df = pd.read_excel(rosters_file)
-    return seeds_df, rosters_df
+    
+    # 2. Load Google Sheets Data (Leaderboard & PlayerStats)
+    # This prevents the 429 error by caching the result for 2 minutes
+    try:
+        # Assuming you've already defined 'client' and 'SHEET_ID' above
+        sh = client.open_by_key(SHEET_ID)
+        
+        # Pull the Leaderboard for the website display
+        leaderboard_raw = sh.worksheet("Leaderboard").get_all_records()
+        leaderboard_df = pd.DataFrame(leaderboard_raw)
+        
+        # Pull the Sheet1 (Picks) to check for name/availability if needed
+        picks_raw = sh.worksheet("Sheet1").get_all_records()
+        picks_df = pd.DataFrame(picks_raw)
+        
+    except Exception as e:
+        st.error(f"Error connecting to Google Sheets: {e}")
+        leaderboard_df = pd.DataFrame()
+        picks_df = pd.DataFrame()
 
-seeds_df, rosters_df = load_data()
+    return seeds_df, rosters_df, leaderboard_df, picks_df
+
+# Call the function once
+seeds_df, rosters_df, leaderboard_df, picks_df = load_all_data()
 
 # --- GOOGLE SHEETS CONNECTION ---
 conn = st.connection("gsheets", type=GSheetsConnection)
@@ -105,7 +130,7 @@ with tab1:
             with st.spinner("Submitting to Google Sheets..."):
                 try:
                     # 1. Prepare the data row
-                    new_entry = {"Contestant": user_name}
+                    new_entry = {"Name": user_name}
                     for p in user_selections:
                         new_entry[f"Slot_{p['Slot']}_Player"] = p['Player']
                         new_entry[f"Slot_{p['Slot']}_Team"] = p['Team']
