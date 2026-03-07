@@ -179,11 +179,45 @@ with tab1:
                 
 with tab2:
     st.title("🏆 Current Standings")
-    if not leaderboard_df.empty:
-        # If your local leaderboard_df was loaded in the load_all_data() function
-        st.dataframe(leaderboard_df, use_container_width=True, hide_index=True)
-    else:
-        st.write("No standings available yet. Points will update once the games begin!")
+    
+    try:
+        # 1. Load the "Picks" from Sheet1 and "Stats" from your Excel file
+        # leaderboard_df and picks_df should be loaded from your load_all_data() function
+        
+        if not picks_df.empty:
+            # This is where we calculate the round-by-round scores
+            # We need to map each player's points to the specific round they were scored in.
+            
+            # --- ROUND CALCULATION LOGIC ---
+            # You'll need a way to link Game IDs to Rounds. 
+            # Example mapping based on dates for 2026:
+            def get_round(game_date):
+                if game_date in ['2026-03-20', '2026-03-21']: return '1st Round'
+                if game_date in ['2026-03-22', '2026-03-23']: return '2nd Round'
+                if game_date in ['2026-03-27', '2026-03-28']: return 'Sweet 16'
+                if game_date in ['2026-03-29', '2026-03-30']: return 'Elite 8'
+                if game_date == '2026-04-03': return 'Final Four'
+                if game_date == '2026-04-05': return "Nat'l Champ"
+                return 'Other'
+
+            # (This part would typically happen in your 'extract_wbb_player_points.py' script
+            # to generate a table that looks exactly like your screenshot.)
+
+            # 2. Display the formatted Leaderboard
+            # Force columns to match your men's screenshot
+            display_cols = ['Contestant', '1st Round', '2nd Round', 'Sweet 16', 'Elite 8', 'Final Four', "Nat'l Champ", 'Total']
+            
+            # Ensure the dataframe is sorted by 'Total' descending
+            leaderboard_final = leaderboard_df.sort_values(by='Total', ascending=False)
+            
+            st.dataframe(
+                leaderboard_final[display_cols], 
+                use_container_width=True, 
+                hide_index=True
+            )
+            
+    except Exception as e:
+        st.error(f"Leaderboard Display Error: {e}")
 
 with tab3:
     st.title("📊 Individual Player Points")
