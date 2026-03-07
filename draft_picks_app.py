@@ -292,30 +292,28 @@ with tab4:
 
             for user in display_list:
                 with st.expander(f"👤 {user}'s Picks", expanded=(selected_user != "All")):
-                    # Grab the specific row for this user
                     user_row = picks_df[picks_df['Contestant'] == user].iloc[0]
                     
                     user_players = []
-                    # Loop through each of the 8 slots defined in your Sheet1 headers
                     for i in range(1, 9):
-                        p_col = f"Slot_{i}_Player"
-                        t_col = f"Slot_{i}_Team"
-                        s_col = f"Slot_{i}_Seed"
+                        p_name = user_row.get(f"Slot_{i}_Player")
                         
-                        p_name = user_row.get(p_col)
-                        
-                        # Only add to the table if the player slot isn't empty
                         if p_name and str(p_name).strip() != "":
+                            # We only include the columns you actually want to see
                             user_players.append({
-                                "Slot": f"Player {i}",
-                                "Name": p_name,
-                                "Team": user_row.get(t_col, "N/A"),
-                                "Seed": user_row.get(s_col, "-")
+                                "Selected Player": p_name,
+                                "Team": user_row.get(f"Slot_{i}_Team", "N/A"),
+                                "Seed": user_row.get(f"Slot_{i}_Seed", "-")
                             })
                     
                     if user_players:
-                        st.table(pd.DataFrame(user_players))
+                        # Use st.dataframe with hide_index=True for a clean look
+                        st.dataframe(
+                            pd.DataFrame(user_players), 
+                            use_container_width=True, 
+                            hide_index=True
+                        )
                     else:
-                        st.write("No picks recorded for this contestant.")
+                        st.write("No picks recorded.")
         else:
             st.warning("No submission data found in the system.")
