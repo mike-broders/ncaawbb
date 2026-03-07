@@ -36,28 +36,25 @@ SHEET_ID = "1P5-Kc_2X7skNMye3EB-oU-wpc4IsuSI1D9KyY9jW3gU"
 # This also saves your local computer/GitHub from unnecessary reads.
 @st.cache_data(ttl=120) 
 def load_all_data():
-    # 1. Load Local Files
+    # 1. Local Files
     seeds_df = pd.read_csv(seeds_file)
     seeds_df['Seed'] = seeds_df['Seed'].astype(int)
     rosters_df = pd.read_excel(rosters_file)
     
-    # 2. Load Google Sheets Data (Leaderboard & PlayerStats)
-    # This prevents the 429 error by caching the result for 2 minutes
+    # 2. Google Sheets
     try:
-        # Assuming you've already defined 'client' and 'SHEET_ID' above
-        sh = client.open_by_key(SHEET_ID)
+        # Re-authorize and open inside the function to be safe
+        gc = gspread.authorize(creds)
+        sh = gc.open_by_key(SHEET_ID) # Make sure SHEET_ID is your long string
         
-        # Pull the Leaderboard for the website display
-        leaderboard_raw = sh.worksheet("Leaderboard").get_all_records()
-        leaderboard_df = pd.DataFrame(leaderboard_raw)
-        
-        # Pull the Sheet1 (Picks) to check for name/availability if needed
-        picks_raw = sh.worksheet("Sheet1").get_all_records()
-        picks_df = pd.DataFrame(picks_raw)
+        # Explicitly get the worksheets
+        leaderboard_df = pd.DataFrame(sh.worksheet("Leaderboard").get_all_records())
+        picks_df = pd.DataFrame(sh.worksheet("Sheet1").get_all_records())
         
     except Exception as e:
         st.error(f"Error connecting to Google Sheets: {e}")
-        leaderboard_df = pd.DataFrame()
+        # Provide empty dataframes so the rest of the app doesn't crash
+        leaderboard_df = pd.DataFrame(columns=['Contestant', 'Total Points', 'Last Updated'])
         picks_df = pd.DataFrame()
 
     return seeds_df, rosters_df, leaderboard_df, picks_df
@@ -145,51 +142,35 @@ with tab1:
         if st.button("Submit My Player Picks", disabled=not is_valid, use_container_width=True, type="primary"):
             with st.spinner("Submitting to Google Sheets..."):
                 try:
-                    # 1. Prepare the data row
-                    new_entry = {"Name": user_name}
+                    # RE-AUTHORIZE GSPREAD (Ensures the 'client' is fresh)
+                    gc = gspread.authorize(creds)
+                    sh = gc.open_by_key(SHEET_ID)
+                    target_sheet = sh.worksheet("Sheet1")
+
+                    # Prepare the data row
+                    # 1. Start with the name
+                    row_data = [user_name]
+                    # 2. Add player, team, and seed for all 8 slots
                     for p in user_selections:
-                        new_entry[f"Slot_{p['Slot']}_Player"] = p['Player']
-                        new_entry[f"Slot_{p['Slot']}_Team"] = p['Team']
-                        new_entry[f"Slot_{p['Slot']}_Seed"] = p['Seed']
-                    
-                    # 2. Read existing data (ttl=0 ensures no caching issues)
-                    existing_data = conn.read(worksheet="Sheet1", ttl=0)
-                    existing_data = existing_data.dropna(how="all")
-                    
-                    # 3. Combine and Update
-                    updated_df = pd.concat([existing_data, pd.DataFrame([new_entry])], ignore_index=True)
-                    conn.update(worksheet="Sheet1", data=updated_df)
+                        row_data.extend([p['Player'], p['Team'], p['Seed']])
+
+                    # Append the row
+                    target_sheet.append_row(row_data)
                     
                     st.success(f"🎉 Successfully submitted! Good luck, {user_name}!")
                     st.balloons()
+                    st.cache_data.clear() # Clears the leaderboard cache so it updates
                     
                 except Exception as e:
                     st.error(f"Error submitting to Google Sheets: {e}")
                 
 with tab2:
     st.title("🏆 Current Standings")
-    try:
-        df_leaderboard = conn.read(worksheet="Leaderboard", ttl=0)
-        
-        if not df_leaderboard.empty:
-            # 1. Grab timestamp from the header string
-            st.info(f"🕒 {str(df_leaderboard.columns[0])}")
-            
-            # 2. Re-align headers 
-            actual_data = df_leaderboard.copy()
-            actual_data.columns = actual_data.iloc[0]
-            actual_data = actual_data[1:].reset_index(drop=True)
-            
-            # --- THE FIX: FORCE COLUMN NAMES & DATA TO WEB-SAFE TYPES ---
-            # Force column names to be strings (fixes the JSON error)
-            actual_data.columns = [str(c) for c in actual_data.columns]
-            
-            # Convert numeric columns to float/int, then convert everything to object
-            # to ensure no hidden int64 types remain
-            actual_data = actual_data.apply(pd.to_numeric, errors='ignore')
-            actual_data = actual_data.astype(object) 
-
-            st.dataframe(actual_data, use_container_width=True, hide_index=True)
+    if not leaderboard_df.empty:
+        # If your local leaderboard_df was loaded in the load_all_data() function
+        st.dataframe(leaderboard_df, use_container_width=True, hide_index=True)
+    else:
+        st.write("No standings available yet. Points will update once the games begin!")
             
     except Exception as e:
         st.error(f"Leaderboard Error: {e}")
@@ -197,27 +178,13 @@ with tab2:
 with tab3:
     st.title("📊 Individual Player Points")
     try:
-        df_stats = conn.read(worksheet="PlayerStats", ttl=0)
+        # Use the gspread method to read the sheet
+        gc = gspread.authorize(creds)
+        sh = gc.open_by_key(SHEET_ID)
+        stats_data = sh.worksheet("PlayerStats").get_all_records()
+        df_stats = pd.DataFrame(stats_data)
         
         if not df_stats.empty:
-            st.info(f"🕒 {str(df_stats.columns[0])}")
-            
-            actual_stats = df_stats.copy()
-            actual_stats.columns = actual_stats.iloc[0]
-            actual_stats = actual_stats[1:].reset_index(drop=True)
-            
-            # --- THE FIX: FORCE COLUMN NAMES & DATA TO WEB-SAFE TYPES ---
-            actual_stats.columns = [str(c) for c in actual_stats.columns]
-            
-            actual_stats = actual_stats.apply(pd.to_numeric, errors='ignore')
-            
-            if "Total" in actual_stats.columns:
-                actual_stats = actual_stats.sort_values(by="Total", ascending=False)
-            
-            # Final conversion to standard objects for JSON safety
-            actual_stats = actual_stats.astype(object)
-
-            st.dataframe(actual_stats, use_container_width=True, hide_index=True)
-            
+            st.dataframe(df_stats.sort_values(by="Points", ascending=False), use_container_width=True, hide_index=True)
     except Exception as e:
         st.error(f"Stats Error: {e}")
