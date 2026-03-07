@@ -45,16 +45,38 @@ def load_all_data():
     try:
         # Re-authorize and open inside the function to be safe
         gc = gspread.authorize(creds)
-        sh = gc.open_by_key(SHEET_ID) # Make sure SHEET_ID is your long string
+        sh = gc.open_by_key(SHEET_ID)
         
-        # Explicitly get the worksheets
-        leaderboard_df = pd.DataFrame(sh.worksheet("Leaderboard").get_all_records())
-        picks_df = pd.DataFrame(sh.worksheet("Sheet1").get_all_records())
+        # --- LOAD LEADERBOARD ---
+        lb_worksheet = sh.worksheet("Leaderboard")
+        lb_data = lb_worksheet.get_all_values()
         
+        # In your extract script, Row 1 is the Timestamp, Row 2 is the Headers.
+        # We grab Row 2 (index 1) as columns and data from Row 3 (index 2) onwards.
+        if len(lb_data) > 1:
+            leaderboard_df = pd.DataFrame(lb_data[2:], columns=lb_data[1])
+            # Store the timestamp from A1 for use in the UI if needed
+            st.caption(f"Stats {lb_data[0][0]}") 
+        else:
+            leaderboard_df = pd.DataFrame(columns=['Contestant', '1st Round', '2nd Round', 'Total'])
+
+        # --- LOAD PICKS ---
+        picks_worksheet = sh.worksheet("Sheet1")
+        picks_data = picks_worksheet.get_all_values()
+        
+        if len(picks_data) > 0:
+            # data[0] is the header row, data[1:] is the actual picks
+            picks_df = pd.DataFrame(picks_data[1:], columns=picks_data[0])
+            
+            # CLEANUP: Remove any completely empty columns that cause duplicate issues
+            picks_df = picks_df.loc[:, ~picks_df.columns.duplicated()]
+            picks_df = picks_df.loc[:, picks_df.columns != '']
+        else:
+            picks_df = pd.DataFrame()
+            
     except Exception as e:
         st.error(f"Error connecting to Google Sheets: {e}")
-        # Provide empty dataframes so the rest of the app doesn't crash
-        leaderboard_df = pd.DataFrame(columns=['Contestant', 'Total Points', 'Last Updated'])
+        leaderboard_df = pd.DataFrame(columns=['Contestant', '1st Round', '2nd Round', 'Total'])
         picks_df = pd.DataFrame()
 
     return seeds_df, rosters_df, leaderboard_df, picks_df
