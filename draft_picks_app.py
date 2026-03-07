@@ -91,8 +91,7 @@ def load_all_data():
     return seeds_df, rosters_df, leaderboard_df, picks_df, player_stats_df
 
 # Call the function once
-seeds_df, rosters_df, leaderboard_df, picks_df = load_all_data()
-
+seeds_df, rosters_df, leaderboard_df, picks_df, player_stats_df = load_all_data()
 # --- GOOGLE SHEETS CONNECTION ---
 conn = st.connection("gsheets", type=GSheetsConnection)
 
