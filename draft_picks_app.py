@@ -276,10 +276,10 @@ with tab4:
     st.title("📝 Final Contestant Submissions")
     
     # DEADLINE should be defined at the top of your script
-    now = datetime.datetime.now()
+    # now = datetime.datetime.now()
 
     if now < deadline:
-        st.info(f"🔒 Submissions are hidden until the tournament begins ({DEADLINE.strftime('%I:%M %p on %m/%d')}).")
+        st.info(f"🔒 Submissions are hidden until the tournament begins ({deadline.strftime('%I:%M %p on %m/%d')}).")
     else:
         # After normalization, we know the column is called 'Contestant'
         if not picks_df.empty and 'Contestant' in picks_df.columns:
