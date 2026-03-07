@@ -103,6 +103,8 @@ with tab1:
         * The person with the highest point total at the conclusion of the tournament wins.
         """)
 
+        st.link_button("Go to Men's Tournament Pool 🏀", "https://teletraan1.com/ncaaplayerpool/")
+
         user_name = st.text_input("Enter Your Name / Team Name")
         
         user_selections = []
