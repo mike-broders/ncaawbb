@@ -102,11 +102,11 @@ seeds_df, rosters_df, leaderboard_df, picks_df, player_stats_df = load_all_data(
 conn = st.connection("gsheets", type=GSheetsConnection)
 
 # --- APP TABS ---
-tab1, tab2, tab3, tab4 = st.tabs(["📝 Enter Player Picks", "🏆 Leaderboard", "📊 Player Stats", "📝 View Submissions"])
+tab1, tab2, tab4 = st.tabs(["📝 Enter Player Picks", "🏆 Leaderboard", "📊 View Submissions & Stats"])
 
 # 1. Set your deadline (Year, Month, Day, Hour, Minute)
 # Example: March 19, 2026, at 11:00 AM Central
-deadline = datetime.datetime(2026, 3, 2, 11, 0, 0)
+deadline = datetime.datetime(2026, 3, 20, 11, 0, 0)
 
 # 2. Define Timezones (Ensures the server time matches your time)
 central = pytz.timezone('US/Central')
@@ -244,38 +244,38 @@ with tab2:
     except Exception as e:
         st.error(f"Leaderboard Display Error: {e}")
 
-with tab3:
-    st.title("📊 Individual Player Points")
-    
-    try:
-        # Note: player_stats_df is now loaded in your main load_all_data() function 
-        # using the safer get_all_values() method to avoid duplicate header errors.
-        
-        if not player_stats_df.empty:
-            # Define ideal order for player stats
-            ps_ideal = ["Player Name", "Team", "1st Round", "2nd Round", "Sweet 16", "Elite 8", "Final Four", "Nat'l Champ", "Total"]
-            ps_display = [c for c in ps_ideal if c in player_stats_df.columns]
-            
-            # Ensure Total is numeric for sorting
-            if 'Total' in player_stats_df.columns:
-                player_stats_df['Total'] = pd.to_numeric(player_stats_df['Total'], errors='coerce').fillna(0)
-                player_stats_final = player_stats_df.sort_values(by="Total", ascending=False)
-            else:
-                player_stats_final = player_stats_df
-
-            st.dataframe(
-                player_stats_final[ps_display], 
-                use_container_width=True, 
-                hide_index=True
-            )
-        else:
-            st.info("Player stats will be available here starting March 20th.")
-            
-    except Exception as e:
-        st.error(f"Stats Error: {e}")
+##with tab3:
+##    st.title("📊 Individual Player Points")
+##    
+##    try:
+##        # Note: player_stats_df is now loaded in your main load_all_data() function 
+##        # using the safer get_all_values() method to avoid duplicate header errors.
+##        
+##        if not player_stats_df.empty:
+##            # Define ideal order for player stats
+##            ps_ideal = ["Player Name", "Team", "1st Round", "2nd Round", "Sweet 16", "Elite 8", "Final Four", "Nat'l Champ", "Total"]
+##            ps_display = [c for c in ps_ideal if c in player_stats_df.columns]
+##            
+##            # Ensure Total is numeric for sorting
+##            if 'Total' in player_stats_df.columns:
+##                player_stats_df['Total'] = pd.to_numeric(player_stats_df['Total'], errors='coerce').fillna(0)
+##                player_stats_final = player_stats_df.sort_values(by="Total", ascending=False)
+##            else:
+##                player_stats_final = player_stats_df
+##
+##            st.dataframe(
+##                player_stats_final[ps_display], 
+##                use_container_width=True, 
+##                hide_index=True
+##            )
+##        else:
+##            st.info("Player stats will be available here starting March 20th.")
+##            
+##    except Exception as e:
+##        st.error(f"Stats Error: {e}")
 
 with tab4:
-    st.title("📝 Contestant Rosters & Live Stats")
+    st.title("📊 Contestant Rosters & Live Stats")
     
     # now = datetime.datetime.now()
 
