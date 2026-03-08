@@ -106,7 +106,7 @@ tab1, tab2, tab3, tab4 = st.tabs(["📝 Enter Player Picks", "🏆 Leaderboard",
 
 # 1. Set your deadline (Year, Month, Day, Hour, Minute)
 # Example: March 19, 2026, at 11:00 AM Central
-deadline = datetime.datetime(2026, 3, 20, 11, 0, 0)
+deadline = datetime.datetime(2026, 3, 2, 11, 0, 0)
 
 # 2. Define Timezones (Ensures the server time matches your time)
 central = pytz.timezone('US/Central')
@@ -275,45 +275,79 @@ with tab3:
         st.error(f"Stats Error: {e}")
 
 with tab4:
-    st.title("📝 Final Contestant Submissions")
+    st.title("📝 Contestant Rosters & Live Stats")
     
-    # DEADLINE should be defined at the top of your script
     # now = datetime.datetime.now()
 
     if now < deadline:
-        st.info(f"🔒 Submissions are hidden until the tournament begins ({deadline.strftime('%I:%M %p on %m/%d')}).")
+        st.info(f"🔒 Roster stats are hidden until the tournament begins ({deadline.strftime('%I:%M %p on %m/%d')}).")
     else:
-        if not picks_df.empty and 'Contestant' in picks_df.columns:
-            # Get a clean list of contestant names
-            contestants = [c for c in picks_df['Contestant'].unique() if str(c).strip() != ""]
-            
-            selected_user = st.selectbox("Select a Contestant to view their roster:", ["All"] + contestants)
+        # Using 'Name' as the column header per your request
+        if not picks_df.empty and 'Name' in picks_df.columns:
+            contestants = [c for c in picks_df['Name'].unique() if str(c).strip() != ""]
+            selected_user = st.selectbox("Select a Contestant:", ["All"] + contestants)
             display_list = contestants if selected_user == "All" else [selected_user]
 
+            # Rounds to pull from PlayerStats sheet
+            stat_columns = ['1st Round', '2nd Round', 'Sweet 16', 'Elite 8', 'Final Four', "Nat'l Champ", 'Total']
+
             for user in display_list:
-                with st.expander(f"👤 {user}'s Picks", expanded=(selected_user != "All")):
-                    user_row = picks_df[picks_df['Contestant'] == user].iloc[0]
-                    
+                with st.expander(f"👤 {user}'s Live Roster", expanded=(selected_user != "All")):
+                    user_row = picks_df[picks_df['Name'] == user].iloc[0]
                     user_players = []
+                    
                     for i in range(1, 9):
                         p_name = user_row.get(f"Slot_{i}_Player")
                         
                         if p_name and str(p_name).strip() != "":
-                            # We only include the columns you actually want to see
-                            user_players.append({
-                                "Selected Player": p_name,
+                            player_entry = {
+                                "Player": p_name,
                                 "Team": user_row.get(f"Slot_{i}_Team", "N/A"),
                                 "Seed": user_row.get(f"Slot_{i}_Seed", "-")
-                            })
+                            }
+
+                            # Lookup stats from player_stats_df (using "Player Name")
+                            if not player_stats_df.empty:
+                                p_stats = player_stats_df[player_stats_df['Player Name'] == p_name]
+                                
+                                for col in stat_columns:
+                                    if not p_stats.empty and col in p_stats.columns:
+                                        val = p_stats.iloc[0][col]
+                                        # Convert to numeric for summing
+                                        player_entry[col] = pd.to_numeric(val, errors='coerce') or 0
+                                    else:
+                                        player_entry[col] = 0
+                            
+                            user_players.append(player_entry)
                     
                     if user_players:
-                        # Use st.dataframe with hide_index=True for a clean look
+                        df_display = pd.DataFrame(user_players)
+                        
+                        # Create a Summary Row (Totals)
+                        summary_data = {"Player": "**ROSTER TOTALS**", "Team": "", "Seed": ""}
+                        for col in stat_columns:
+                            summary_data[col] = df_display[col].sum()
+                        
+                        # Append the summary row to the dataframe
+                        df_with_total = pd.concat([df_display, pd.DataFrame([summary_data])], ignore_index=True)
+
+                        # Highlight the 'Total' column and make the Summary Row bold
+                        def style_roster(styler):
+                            # Background color for the final Total column
+                            styler.background_gradient(subset=['Total'], cmap='YlGn')
+                            # Bold the last row (the summary row)
+                            styler.apply(lambda x: ['font-weight: bold' if x.name == len(df_with_total)-1 else '' for i in x], axis=1)
+                            return styler
+
+                        # Determine which columns to show based on what actually has data
+                        final_cols = ["Player", "Team", "Seed"] + [c for c in stat_columns if c in df_with_total.columns]
+                        
                         st.dataframe(
-                            pd.DataFrame(user_players), 
+                            df_with_total[final_cols].style.pipe(style_roster), 
                             use_container_width=True, 
                             hide_index=True
                         )
                     else:
                         st.write("No picks recorded.")
         else:
-            st.warning("No submission data found in the system.")
+            st.warning("No submission data found. Check if the 'Name' column exists.")
