@@ -319,20 +319,22 @@ with tab4:
     else:
         # --- NEW: ADD TIMESTAMP INFO ---
         try:
-            # We use header=None to prevent it from skipping the first row
-            # We use usecols=[0] and nrows=1 to only grab the very first cell
-            df_raw_peek = conn.read(worksheet="PlayerStats", ttl=0, header=None, nrows=1, usecols=[0])
+            # We already have to read the player stats for the roster display
+            # We check if the "Last Updated" text is hiding in the first column name
+            df_for_timestamp = conn.read(worksheet="PlayerStats", ttl=0)
             
-            if not df_raw_peek.empty:
-                # Access the value at Row 0, Column 0 directly
-                raw_val = str(df_raw_peek.iloc[0, 0]).strip()
+            if not df_for_timestamp.empty:
+                # In your 3-row setup, Row 1 (Timestamp) often becomes the column name 
+                # for the Row 2 (Headers). Let's check the very first column's name.
+                potential_timestamp = str(df_for_timestamp.columns[0])
                 
-                # Double-check it's actually the timestamp before showing the bar
-                if "Last Updated" in raw_val:
-                    st.info(f"🕒 {raw_val} using live data from ESPN API")
+                if "Last Updated" in potential_timestamp:
+                    st.info(f"🕒 {potential_timestamp} using live data from ESPN API")
                 else:
-                    # If A1 is weirdly empty, try Column 0's header as a fallback
-                    st.info("🕒 Live tournament data is active")
+                    # If it's not there, it might be in the very first row of data
+                    first_row_val = str(df_for_timestamp.iloc[0, 0])
+                    if "Last Updated" in first_row_val:
+                        st.info(f"🕒 {first_row_val} using live data from ESPN API")
         except Exception as e:
             # Uncomment the line below if you need to debug why it's missing
             # st.write(f"Debug Error: {e}")
