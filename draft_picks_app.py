@@ -329,6 +329,8 @@ with tab4:
         except Exception:
             pass # Silently skip if the sheet is temporarily unavailable
 
+        name_col = next((c for c in picks_df.columns if c in ['Name', 'Contestant', 'User', 'Submitter']), None)
+
         if not picks_df.empty and name_col:
             # Use the identified name_col for the dropdown
             contestants = [c for c in picks_df[name_col].unique() if str(c).strip() != ""]
