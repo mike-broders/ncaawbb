@@ -319,17 +319,20 @@ with tab4:
     else:
         # --- NEW: ADD TIMESTAMP INFO ---
         try:
-            # We read with header=None so the timestamp in A1 is treated as data, not a column name
-            df_timestamp_raw = conn.read(worksheet="PlayerStats", ttl=0, header=None, nrows=1)
+            # We use header=None to prevent it from skipping the first row
+            # We use usecols=[0] and nrows=1 to only grab the very first cell
+            df_raw_peek = conn.read(worksheet="PlayerStats", ttl=0, header=None, nrows=1, usecols=[0])
             
-            if not df_timestamp_raw.empty:
-                # Grab the very first cell (Row 0, Column 0)
-                timestamp_str = str(df_timestamp_raw.iloc[0, 0])
-                if "Last Updated" in timestamp_str:
-                    st.info(f"🕒 {timestamp_str} using live data from ESPN API")
+            if not df_raw_peek.empty:
+                # Access the value at Row 0, Column 0 directly
+                raw_val = str(df_raw_peek.iloc[0, 0]).strip()
+                
+                # Double-check it's actually the timestamp before showing the bar
+                if "Last Updated" in raw_val:
+                    st.info(f"🕒 {raw_val} using live data from ESPN API")
                 else:
-                    # Fallback if the structure is different
-                    st.info(f"🕒 Data Refresh Active (Live ESPN Stats)")
+                    # If A1 is weirdly empty, try Column 0's header as a fallback
+                    st.info("🕒 Live tournament data is active")
         except Exception as e:
             # Uncomment the line below if you need to debug why it's missing
             # st.write(f"Debug Error: {e}")
