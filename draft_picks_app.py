@@ -407,8 +407,19 @@ with tab4:
                     for i in range(1, 9):
                         p_name = user_row.get(f"Slot_{i}_Player")
                         
+                        # --- FIX: Define default seed immediately ---
+                        clean_seed = "-" 
+                        
                         if p_name and str(p_name).strip() != "":
                             display_name = str(p_name).strip()
+                            
+                            # Try to get the actual seed from the sheet
+                            try:
+                                raw_seed = user_row.get(f"Slot_{i}_Seed")
+                                if pd.notna(raw_seed) and str(raw_seed).strip() != "":
+                                    clean_seed = int(float(raw_seed))
+                            except:
+                                clean_seed = "-" # Fallback if data is messy
                             
                             # 1. Create the entry FIRST (Safety Net)
                             player_entry = {
