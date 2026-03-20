@@ -319,16 +319,22 @@ with tab4:
     else:
         # --- NEW: ADD TIMESTAMP INFO ---
         try:
-            # We use ttl=0 to force a fresh read of the PlayerStats sheet
-            df_player_stats_raw = conn.read(worksheet="PlayerStats", ttl=0)
-            if not df_player_stats_raw.empty:
-                # Since Row 1 is the timestamp in your Google Sheet, 
-                # df.columns[0] contains that "Last Updated: ..." string
-                timestamp_str = str(df_player_stats_raw.columns[0])
-                st.info(f"🕒 {timestamp_str} using live data from ESPN API")
-        except Exception:
-            pass # Silently skip if the sheet is temporarily unavailable
-
+            # We read with header=None so the timestamp in A1 is treated as data, not a column name
+            df_timestamp_raw = conn.read(worksheet="PlayerStats", ttl=0, header=None, nrows=1)
+            
+            if not df_timestamp_raw.empty:
+                # Grab the very first cell (Row 0, Column 0)
+                timestamp_str = str(df_timestamp_raw.iloc[0, 0])
+                if "Last Updated" in timestamp_str:
+                    st.info(f"🕒 {timestamp_str} using live data from ESPN API")
+                else:
+                    # Fallback if the structure is different
+                    st.info(f"🕒 Data Refresh Active (Live ESPN Stats)")
+        except Exception as e:
+            # Uncomment the line below if you need to debug why it's missing
+            # st.write(f"Debug Error: {e}")
+            pass
+        
         name_col = next((c for c in picks_df.columns if c in ['Name', 'Contestant', 'User', 'Submitter']), None)
 
         if not picks_df.empty and name_col:
