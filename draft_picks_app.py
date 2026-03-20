@@ -410,6 +410,14 @@ with tab4:
                         if p_name and str(p_name).strip() != "":
                             display_name = str(p_name).strip()
                             
+                            # 1. Create the entry FIRST (Safety Net)
+                            player_entry = {
+                                "Player": display_name,
+                                "Team": user_row.get(f"Slot_{i}_Team", "N/A"),
+                                "Seed": clean_seed,
+                                "Status": "active" 
+                            }
+
                             # ... (keep your existing seed and player_entry logic here) ...
 
                             # 2. Match against PlayerStats (which uses 'Player Name')
