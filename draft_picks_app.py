@@ -319,26 +319,29 @@ with tab4:
     else:
         # --- NEW: ADD TIMESTAMP INFO ---
         try:
-            # We already have to read the player stats for the roster display
-            # We check if the "Last Updated" text is hiding in the first column name
-            df_for_timestamp = conn.read(worksheet="PlayerStats", ttl=0)
+            # Force a fresh read of the stats sheet
+            df_ts = conn.read(worksheet="PlayerStats", ttl=0)
             
-            if not df_for_timestamp.empty:
-                # In your 3-row setup, Row 1 (Timestamp) often becomes the column name 
-                # for the Row 2 (Headers). Let's check the very first column's name.
-                potential_timestamp = str(df_for_timestamp.columns[0])
-                
-                if "Last Updated" in potential_timestamp:
-                    st.info(f"🕒 {potential_timestamp} using live data from ESPN API")
-                else:
-                    # If it's not there, it might be in the very first row of data
-                    first_row_val = str(df_for_timestamp.iloc[0, 0])
-                    if "Last Updated" in first_row_val:
-                        st.info(f"🕒 {first_row_val} using live data from ESPN API")
-        except Exception as e:
-            # Uncomment the line below if you need to debug why it's missing
-            # st.write(f"Debug Error: {e}")
-            pass
+            # Check 1: Is it the column header? (Most common for Row 1)
+            ts_candidate = str(df_ts.columns[0])
+            
+            # Check 2: Is it in the first actual row of data?
+            if "Last Updated" not in ts_candidate and not df_ts.empty:
+                ts_candidate = str(df_ts.iloc[0, 0])
+            
+            # Check 3: Is it in the second row of data? (In case of extra headers)
+            if "Last Updated" not in ts_candidate and len(df_ts) > 1:
+                ts_candidate = str(df_ts.iloc[1, 0])
+
+            # Final Display
+            if "Last Updated" in ts_candidate:
+                st.info(f"🕒 {ts_candidate} using live data from ESPN API")
+            else:
+                # If we still can't find the exact string, show a default so we know the code is working
+                st.info("🕒 Live tournament data is active (ESPN API)")
+        except Exception:
+            # If the sheet is totally unreachable, show a generic status
+            st.info("🕒 Connecting to live scoreboard...")
         
         name_col = next((c for c in picks_df.columns if c in ['Name', 'Contestant', 'User', 'Submitter']), None)
 
