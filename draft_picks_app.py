@@ -319,29 +319,34 @@ with tab4:
     else:
         # --- NEW: ADD TIMESTAMP INFO ---
         try:
-            # Force a fresh read of the stats sheet
             df_ts = conn.read(worksheet="PlayerStats", ttl=0)
             
-            # Check 1: Is it the column header? (Most common for Row 1)
-            ts_candidate = str(df_ts.columns[0])
+            # --- DEBUG LINE: DELETE THIS AFTER IT WORKS ---
+            # st.write(f"DEBUG: First Col Name is '{df_ts.columns[0]}'")
             
-            # Check 2: Is it in the first actual row of data?
-            if "Last Updated" not in ts_candidate and not df_ts.empty:
-                ts_candidate = str(df_ts.iloc[0, 0])
-            
-            # Check 3: Is it in the second row of data? (In case of extra headers)
-            if "Last Updated" not in ts_candidate and len(df_ts) > 1:
-                ts_candidate = str(df_ts.iloc[1, 0])
+            # Grab the top 3 potential spots
+            check_spots = [
+                str(df_ts.columns[0]), # The Header
+                str(df_ts.iloc[0, 0]) if not df_ts.empty else "", # Row 1
+                str(df_ts.iloc[1, 0]) if len(df_ts) > 1 else ""  # Row 2
+            ]
 
-            # Final Display
-            if "Last Updated" in ts_candidate:
-                st.info(f"🕒 {ts_candidate} using live data from ESPN API")
+            # Look for the timestamp in any of those spots (Case Insensitive)
+            final_ts = None
+            for spot in check_spots:
+                if "updated" in spot.lower():
+                    final_ts = spot
+                    break
+            
+            if final_ts:
+                st.info(f"🕒 {final_ts} using live data from ESPN API")
             else:
-                # If we still can't find the exact string, show a default so we know the code is working
-                st.info("🕒 Live tournament data is active (ESPN API)")
-        except Exception:
-            # If the sheet is totally unreachable, show a generic status
-            st.info("🕒 Connecting to live scoreboard...")
+                # If we still can't find the exact string, show the first cell anyway 
+                # so we can see what it actually says.
+                st.info(f"🕒 {check_spots[0]} | ESPN API Active")
+
+        except Exception as e:
+            st.info("🕒 Live tournament data is active")
         
         name_col = next((c for c in picks_df.columns if c in ['Name', 'Contestant', 'User', 'Submitter']), None)
 
