@@ -345,10 +345,54 @@ with tab4:
     
     if now < deadline:
         st.info(f"🔒 Roster stats are hidden until the tournament begins ({deadline.strftime('%I:%M %p on %m/%d')}).")
+##    else:
+##        # Match your header: 'Name' (Women's script specific)
+##        if not picks_df.empty and 'Name' in picks_df.columns:
+##            contestants = [c for c in picks_df['Name'].unique() if str(c).strip() != ""]
+##            selected_user = st.selectbox("Select a Contestant:", ["All"] + contestants, key="womens_roster_select")
+##            display_list = contestants if selected_user == "All" else [selected_user]
+##
+##            stat_columns = ['1st Round', '2nd Round', 'Sweet 16', 'Elite 8', 'Final Four', "Nat'l Champ", 'Total']
+##
+##            for user in display_list:
+##                with st.expander(f"👤 {user}'s Live Roster", expanded=(selected_user != "All")):
+##                    # Lookup row based on 'Name'
+##                    user_row = picks_df[picks_df['Name'] == user].iloc[0]
+##                    user_players = []
+##                    
+##                    for i in range(1, 9):
+##                        p_name = user_row.get(f"Slot_{i}_Player")
+##                        
+##                        if p_name and str(p_name).strip() != "":
+##                            display_name = str(p_name).strip()
+##                            
+##                            try:
+##                                clean_seed = int(float(user_row.get(f"Slot_{i}_Seed", 0)))
+##                            except:
+##                                clean_seed = "-"
+##
+##                            # Default entry with Status for shading
+##                            player_entry = {
+##                                "Player": display_name,
+##                                "Team": user_row.get(f"Slot_{i}_Team", "N/A"),
+##                                "Seed": clean_seed,
+##                                "Status": "active" 
+##                            }
+##
+##                            # Lookup logic from PlayerStats
+##                            if not player_stats_df.empty and 'Player Name' in player_stats_df.columns:
+##                                search_name = display_name.lower().strip()
+##                                match_mask = player_stats_df['Player Name'].astype(str).str.lower().str.strip() == search_name
+##                                p_stats = player_stats_df[match_mask]
+
     else:
-        # Match your header: 'Name' (Women's script specific)
-        if not picks_df.empty and 'Name' in picks_df.columns:
-            contestants = [c for c in picks_df['Name'].unique() if str(c).strip() != ""]
+        # 1. Identify the Contestant Column (Handles 'Name' vs 'Contestant' mismatch)
+        # We look for any column that sounds like a user/contestant name
+        name_col = next((c for c in picks_df.columns if c in ['Name', 'Contestant', 'User', 'Submitter']), None)
+
+        if not picks_df.empty and name_col:
+            # Use the identified name_col for the dropdown
+            contestants = [c for c in picks_df[name_col].unique() if str(c).strip() != ""]
             selected_user = st.selectbox("Select a Contestant:", ["All"] + contestants, key="womens_roster_select")
             display_list = contestants if selected_user == "All" else [selected_user]
 
@@ -356,8 +400,8 @@ with tab4:
 
             for user in display_list:
                 with st.expander(f"👤 {user}'s Live Roster", expanded=(selected_user != "All")):
-                    # Lookup row based on 'Name'
-                    user_row = picks_df[picks_df['Name'] == user].iloc[0]
+                    # Use the identified name_col to find the specific user's row
+                    user_row = picks_df[picks_df[name_col] == user].iloc[0]
                     user_players = []
                     
                     for i in range(1, 9):
@@ -366,24 +410,16 @@ with tab4:
                         if p_name and str(p_name).strip() != "":
                             display_name = str(p_name).strip()
                             
-                            try:
-                                clean_seed = int(float(user_row.get(f"Slot_{i}_Seed", 0)))
-                            except:
-                                clean_seed = "-"
+                            # ... (keep your existing seed and player_entry logic here) ...
 
-                            # Default entry with Status for shading
-                            player_entry = {
-                                "Player": display_name,
-                                "Team": user_row.get(f"Slot_{i}_Team", "N/A"),
-                                "Seed": clean_seed,
-                                "Status": "active" 
-                            }
-
-                            # Lookup logic from PlayerStats
+                            # 2. Match against PlayerStats (which uses 'Player Name')
                             if not player_stats_df.empty and 'Player Name' in player_stats_df.columns:
                                 search_name = display_name.lower().strip()
+                                # We explicitly use 'Player Name' here because that's what the stats sheet uses
                                 match_mask = player_stats_df['Player Name'].astype(str).str.lower().str.strip() == search_name
                                 p_stats = player_stats_df[match_mask]
+                                
+                                # ... (keep the rest of your scoring/styling logic) ...
                                 
                                 if not p_stats.empty:
                                     if 'Status' in p_stats.columns:
