@@ -297,71 +297,18 @@ with tab2:
         )
     else:
         st.error("No leaderboard data found.")
-                
-##with tab2:
-##    st.title("🏆 Current Standings")
-##    try:
-##        # 1. Read the sheet (ttl=0 so the Refresh button works instantly)
-##        df_leaderboard = conn.read(worksheet="Leaderboard", ttl=0)
-##        
-##        if not df_leaderboard.empty:
-##            # 2. Extract timestamp from the very first header
-##            timestamp_str = str(df_leaderboard.columns[0])
-##            st.info(f"🕒 {timestamp_str}")
-##            
-##            # 3. Fix Headers: Skip the 'Last Updated' row and set real headers
-##            actual_data = df_leaderboard.copy()
-##            actual_data.columns = [str(c).strip() for c in actual_data.iloc[0]]
-##            actual_data = actual_data[1:].reset_index(drop=True)
-##            
-##            # 4. Data Type Cleanup (Force numbers to be numeric)
-##            actual_data = actual_data.apply(pd.to_numeric, errors='ignore')
-##            
-##            # 5. Sorting: Highest points at the top
-##            if 'Total' in actual_data.columns:
-##                actual_data = actual_data.sort_values(by='Total', ascending=False)
-##            
-##            # 6. Final Display with Auto-Styling
-##            # This uses the style_leaderboard function defined outside the tabs
-##            st.dataframe(
-##                actual_data.style.apply(style_leaderboard, axis=None), 
-##                use_container_width=True, 
-##                hide_index=True
-##            )
-##        else:
-##            st.warning("Leaderboard data is currently empty.")
-##            
-##    except Exception as e:
-##        st.error(f"Leaderboard Error: {e}")
-##with tab3:
-##    st.title("📊 Individual Player Points")
+
+##with tab4:
+##    st.info(f"Press Refresh Data button in the sidebar to the left to grab most current available data.")
+##    st.title("📊 Contestant Rosters & Live Stats")
 ##    
-##    try:
-##        # Note: player_stats_df is now loaded in your main load_all_data() function 
-##        # using the safer get_all_values() method to avoid duplicate header errors.
-##        
-##        if not player_stats_df.empty:
-##            # Define ideal order for player stats
-##            ps_ideal = ["Player Name", "Team", "1st Round", "2nd Round", "Sweet 16", "Elite 8", "Final Four", "Nat'l Champ", "Total"]
-##            ps_display = [c for c in ps_ideal if c in player_stats_df.columns]
-##            
-##            # Ensure Total is numeric for sorting
-##            if 'Total' in player_stats_df.columns:
-##                player_stats_df['Total'] = pd.to_numeric(player_stats_df['Total'], errors='coerce').fillna(0)
-##                player_stats_final = player_stats_df.sort_values(by="Total", ascending=False)
-##            else:
-##                player_stats_final = player_stats_df
+##    if now < deadline:
+##        st.info(f"🔒 Roster stats are hidden until the tournament begins ({deadline.strftime('%I:%M %p on %m/%d')}).")
 ##
-##            st.dataframe(
-##                player_stats_final[ps_display], 
-##                use_container_width=True, 
-##                hide_index=True
-##            )
-##        else:
-##            st.info("Player stats will be available here starting March 20th.")
-##            
-##    except Exception as e:
-##        st.error(f"Stats Error: {e}")
+##    else:
+##        # 1. Identify the Contestant Column (Handles 'Name' vs 'Contestant' mismatch)
+##        # We look for any column that sounds like a user/contestant name
+##        name_col = next((c for c in picks_df.columns if c in ['Name', 'Contestant', 'User', 'Submitter']), None)
 
 with tab4:
     st.info(f"Press Refresh Data button in the sidebar to the left to grab most current available data.")
@@ -369,50 +316,18 @@ with tab4:
     
     if now < deadline:
         st.info(f"🔒 Roster stats are hidden until the tournament begins ({deadline.strftime('%I:%M %p on %m/%d')}).")
-##    else:
-##        # Match your header: 'Name' (Women's script specific)
-##        if not picks_df.empty and 'Name' in picks_df.columns:
-##            contestants = [c for c in picks_df['Name'].unique() if str(c).strip() != ""]
-##            selected_user = st.selectbox("Select a Contestant:", ["All"] + contestants, key="womens_roster_select")
-##            display_list = contestants if selected_user == "All" else [selected_user]
-##
-##            stat_columns = ['1st Round', '2nd Round', 'Sweet 16', 'Elite 8', 'Final Four', "Nat'l Champ", 'Total']
-##
-##            for user in display_list:
-##                with st.expander(f"👤 {user}'s Live Roster", expanded=(selected_user != "All")):
-##                    # Lookup row based on 'Name'
-##                    user_row = picks_df[picks_df['Name'] == user].iloc[0]
-##                    user_players = []
-##                    
-##                    for i in range(1, 9):
-##                        p_name = user_row.get(f"Slot_{i}_Player")
-##                        
-##                        if p_name and str(p_name).strip() != "":
-##                            display_name = str(p_name).strip()
-##                            
-##                            try:
-##                                clean_seed = int(float(user_row.get(f"Slot_{i}_Seed", 0)))
-##                            except:
-##                                clean_seed = "-"
-##
-##                            # Default entry with Status for shading
-##                            player_entry = {
-##                                "Player": display_name,
-##                                "Team": user_row.get(f"Slot_{i}_Team", "N/A"),
-##                                "Seed": clean_seed,
-##                                "Status": "active" 
-##                            }
-##
-##                            # Lookup logic from PlayerStats
-##                            if not player_stats_df.empty and 'Player Name' in player_stats_df.columns:
-##                                search_name = display_name.lower().strip()
-##                                match_mask = player_stats_df['Player Name'].astype(str).str.lower().str.strip() == search_name
-##                                p_stats = player_stats_df[match_mask]
-
     else:
-        # 1. Identify the Contestant Column (Handles 'Name' vs 'Contestant' mismatch)
-        # We look for any column that sounds like a user/contestant name
-        name_col = next((c for c in picks_df.columns if c in ['Name', 'Contestant', 'User', 'Submitter']), None)
+        # --- NEW: ADD TIMESTAMP INFO ---
+        try:
+            # We use ttl=0 to force a fresh read of the PlayerStats sheet
+            df_player_stats_raw = conn.read(worksheet="PlayerStats", ttl=0)
+            if not df_player_stats_raw.empty:
+                # Since Row 1 is the timestamp in your Google Sheet, 
+                # df.columns[0] contains that "Last Updated: ..." string
+                timestamp_str = str(df_player_stats_raw.columns[0])
+                st.info(f"🕒 {timestamp_str} using live data from ESPN API")
+        except Exception:
+            pass # Silently skip if the sheet is temporarily unavailable
 
         if not picks_df.empty and name_col:
             # Use the identified name_col for the dropdown
