@@ -101,37 +101,6 @@ def load_all_data():
     return seeds_df, rosters_df, leaderboard_df, picks_df, player_stats_df, timestamp_str
 
 # --- LEADERBOARD STYLING FUNCTION ---
-##def style_leaderboard(df):
-##    styles = pd.DataFrame('', index=df.index, columns=df.columns)
-##    
-##    # Pre-clean the Player Stats names for faster matching
-##    stats_names = player_stats_df['Player Name'].str.strip().str.lower().tolist()
-##    stats_statuses = player_stats_df['Status'].str.strip().str.lower().tolist()
-##    status_map = dict(zip(stats_names, stats_statuses))
-##
-##    for i, row in df.iterrows():
-##        contestant_name = str(row.get('Contestant', '')).strip()
-##        user_picks = picks_df[picks_df['Contestant'] == contestant_name]
-##        
-##        if not user_picks.empty:
-##            # Get the 8 player names for THIS contestant
-##            p_names = [str(user_picks.iloc[0].get(f"Slot_{j}_Player", "")).strip().lower() for j in range(1, 9)]
-##            
-##            # Check the status for these 8 specific players
-##            user_player_statuses = [status_map.get(name, 'eliminated') for name in p_names if name]
-##            
-##            # If ANY player is active or advanced, the contestant is still "alive"
-##            is_alive = any(s in ['active', 'advanced'] for s in user_player_statuses)
-##            
-##            if is_alive:
-##                bg = 'rgba(0, 255, 0, 0.05)' # Green
-##            else:
-##                bg = 'rgba(255, 0, 0, 0.08)'  # Red
-##            
-##            styles.iloc[i, :] = f'background-color: {bg}'
-##            
-##    return styles
-# --- LEADERBOARD STYLING FUNCTION (Deep Theme) ---
 def style_leaderboard(df):
     styles = pd.DataFrame('', index=df.index, columns=df.columns)
     
@@ -411,26 +380,6 @@ with tab4:
                         df_with_total = pd.concat([df_display, pd.DataFrame([summary_data])], ignore_index=True)
 
                         # Local Styling Function
-##                        def style_roster_internal(df):
-##                            styles = pd.DataFrame('', index=df.index, columns=df.columns)
-##                            for idx, row in df.iterrows():
-##                                if idx == len(df) - 1:
-##                                    styles.iloc[idx, :] = 'font-weight: bold; border-top: 2px solid #888;'
-##                                    continue
-##                                
-##                                status = str(row.get('Status', '')).lower()
-##                                if 'eliminated' in status:
-##                                    bg = 'rgba(255, 0, 0, 0.15)'
-##                                elif 'advanced' in status:
-##                                    bg = 'rgba(0, 255, 0, 0.15)'
-##                                elif 'active' in status:
-##                                    bg = 'rgba(0, 0, 255, 0.08)'
-##                                else:
-##                                    bg = ''
-##                                
-##                                if bg:
-##                                    styles.iloc[idx, :] = f'background-color: {bg}'
-##                            return styles
                         def style_roster_internal(df):
                             styles = pd.DataFrame('', index=df.index, columns=df.columns)
                             for idx, row in df.iterrows():
