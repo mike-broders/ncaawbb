@@ -43,6 +43,7 @@ def load_all_data():
     seeds_df = pd.read_csv(seeds_file)
     seeds_df['Seed'] = seeds_df['Seed'].astype(int)
     rosters_df = pd.read_excel(rosters_file)
+    timestamp_str = "Live Data" # Default
     
     # 2. Google Sheets
     try:
@@ -69,7 +70,8 @@ def load_all_data():
                     leaderboard_df[col] = pd.to_numeric(leaderboard_df[col], errors='coerce').fillna(0)
             
             # 4. Display the timestamp from the very first cell
-            st.caption(f"📊 {lb_raw[0][0]}")
+            # st.caption(f"📊 {lb_raw[0][0]}")
+            timestamp_str = lb_raw[0][0]
         else:
             leaderboard_df = pd.DataFrame()
 
@@ -121,7 +123,7 @@ def load_all_data():
         player_stats_df = pd.DataFrame()
         picks_df = pd.DataFrame()
 
-    return seeds_df, rosters_df, leaderboard_df, picks_df, player_stats_df
+    return seeds_df, rosters_df, leaderboard_df, picks_df, player_stats_df, timestamp_str
 
 # --- LEADERBOARD STYLING FUNCTION ---
 def style_leaderboard(df):
@@ -336,7 +338,7 @@ with tab4:
                 st.info("🕒 Connecting to live scoreboard...")
         except Exception:
             # If the "peek" fails, show the general status
-            st.info("🕒 Live tournament data is active (ESPN API)")
+            st.info(f"🕒 {timestamp_str} using live data from ESPN API")
         
         name_col = next((c for c in picks_df.columns if c in ['Name', 'Contestant', 'User', 'Submitter']), None)
 
