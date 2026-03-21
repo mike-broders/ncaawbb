@@ -37,94 +37,6 @@ SHEET_ID = "1P5-Kc_2X7skNMye3EB-oU-wpc4IsuSI1D9KyY9jW3gU"
 
 # --- DATA LOADING ---
 # We set ttl=120 (2 minutes) to prevent hitting Google's 60-request-per-minute limit.
-##@st.cache_data(ttl=120) 
-##def load_all_data():
-##    # 1. Local Files
-##    seeds_df = pd.read_csv(seeds_file)
-##    seeds_df['Seed'] = seeds_df['Seed'].astype(int)
-##    rosters_df = pd.read_excel(rosters_file)
-##    timestamp_str = "Live Data" # Default
-##    
-##    # 2. Google Sheets
-##    try:
-##        gc = gspread.authorize(creds)
-##        sh = gc.open_by_key(SHEET_ID)
-##        
-##        # --- LOAD LEADERBOARD ---
-##        lb_worksheet = sh.worksheet("Leaderboard")
-##        lb_raw = lb_worksheet.get_all_values()
-##        
-##        if len(lb_raw) > 1:
-##            # 1. Use Row 1 (index 1) as headers, Row 2+ (index 2) as data
-##            leaderboard_df = pd.DataFrame(lb_raw[2:], columns=lb_raw[1])
-##            leaderboard_df.columns = leaderboard_df.columns.str.strip()
-##            
-##            # 2. Drop duplicates/empty columns
-##            leaderboard_df = leaderboard_df.loc[:, ~leaderboard_df.columns.duplicated()]
-##            leaderboard_df = leaderboard_df.loc[:, leaderboard_df.columns != '']
-##            
-##            # 3. IMPORTANT: Convert points to numbers (so sorting and totals work)
-##            num_cols = ["1st Round", "2nd Round", "Sweet 16", "Elite 8", "Final Four", "Nat'l Champ", "Total"]
-##            for col in num_cols:
-##                if col in leaderboard_df.columns:
-##                    leaderboard_df[col] = pd.to_numeric(leaderboard_df[col], errors='coerce').fillna(0)
-##            
-##            # 4. Display the timestamp from the very first cell
-##            # st.caption(f"📊 {lb_raw[0][0]}")
-##            timestamp_str = lb_raw[0][0]
-##        else:
-##            leaderboard_df = pd.DataFrame()
-##
-##        # --- LOAD PLAYER STATS ---
-##        ps_worksheet = sh.worksheet("PlayerStats")
-##        ps_raw = ps_worksheet.get_all_values()
-##        
-##        if len(ps_raw) > 1:
-##            # 1. Capture the timestamp from the top-left cell (Row 0, Col 0)
-##            ps_timestamp = ps_raw[0][0] 
-##            
-##            # 2. Use the second row (Index 1) as the actual headers
-##            # 3. Use everything from the third row (Index 2) downwards as the data
-##            player_stats_df = pd.DataFrame(ps_raw[2:], columns=ps_raw[1])
-##            player_stats_df.columns = player_stats_df.columns.str.strip()
-##            
-##            # Clean up numeric columns so they don't stay as strings
-##            stat_cols = ['1st Round', '2nd Round', 'Sweet 16', 'Elite 8', 'Final Four', "Nat'l Champ", 'Total']
-##            for col in stat_cols:
-##                if col in player_stats_df.columns:
-##                    player_stats_df[col] = pd.to_numeric(player_stats_df[col], errors='coerce').fillna(0)
-##        else:
-##            player_stats_df = pd.DataFrame()
-##            ps_timestamp = "No data available"
-##            
-##        # --- LOAD PICKS (Sheet1) ---
-##        picks_worksheet = sh.worksheet("Sheet1")
-##        picks_raw = picks_worksheet.get_all_values()
-##        
-##        if len(picks_raw) > 0:
-##            picks_df = pd.DataFrame(picks_raw[1:], columns=picks_raw[0])
-##            
-##            # Clean up whitespace from headers
-##            picks_df.columns = picks_df.columns.str.strip()
-##            
-##            # Standardize 'Name' to 'Contestant'
-##            if 'Name' in picks_df.columns:
-##                picks_df = picks_df.rename(columns={'Name': 'Contestant'})
-##            
-##            # Remove any empty or duplicate columns
-##            picks_df = picks_df.loc[:, ~picks_df.columns.duplicated()]
-##            picks_df = picks_df.loc[:, picks_df.columns != '']
-##        else:
-##            picks_df = pd.DataFrame()
-##            
-##    except Exception as e:
-##        st.error(f"Error connecting to Google Sheets: {e}")
-##        leaderboard_df = pd.DataFrame()
-##        player_stats_df = pd.DataFrame()
-##        picks_df = pd.DataFrame()
-##
-##    return seeds_df, rosters_df, leaderboard_df, picks_df, player_stats_df, timestamp_str
-
 @st.cache_data(ttl=120) 
 def load_all_data():
     # 1. Local Files
@@ -362,18 +274,6 @@ with tab2:
         )
     else:
         st.error("No leaderboard data found.")
-
-##with tab4:
-##    st.info(f"Press Refresh Data button in the sidebar to the left to grab most current available data.")
-##    st.title("📊 Contestant Rosters & Live Stats")
-##    
-##    if now < deadline:
-##        st.info(f"🔒 Roster stats are hidden until the tournament begins ({deadline.strftime('%I:%M %p on %m/%d')}).")
-##
-##    else:
-##        # 1. Identify the Contestant Column (Handles 'Name' vs 'Contestant' mismatch)
-##        # We look for any column that sounds like a user/contestant name
-##        name_col = next((c for c in picks_df.columns if c in ['Name', 'Contestant', 'User', 'Submitter']), None)
 
 with tab4:
     st.info(f"Press Refresh Data button in the sidebar to the left to grab most current available data.")
